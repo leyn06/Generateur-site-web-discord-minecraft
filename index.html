@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Présentation de Serveur</title>
+    <style>
+        :root {
+            --bg-color: #1e1e2f;
+            --panel-bg: #2a2a40;
+            --text-color: #ffffff;
+            --accent: #5865F2;
+        }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Sidebar Styles */
+        #sidebar {
+            width: 350px;
+            background-color: var(--panel-bg);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        h1 { font-size: 1.2rem; margin-top: 0; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        h2 { font-size: 1rem; margin-top: 20px; margin-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+        input[type="text"], input[type="color"] {
+            width: 100%; padding: 8px; box-sizing: border-box;
+            background: #1e1e2f; border: 1px solid #444; color: white; border-radius: 4px;
+        }
+        input[type="color"] { padding: 2px; height: 35px; cursor: pointer; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        button {
+            width: 100%; padding: 10px; background-color: var(--accent); color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-danger { background-color: #ed4245; }
+        
+        /* Card Editor */
+        .card-item { background: #1e1e2f; padding: 10px; margin-bottom: 10px; border-radius: 4px; position: relative; }
+        .card-item h4 { margin: 0 0 5px 0; }
+        .card-item p { margin: 0; font-size: 0.8rem; opacity: 0.8; }
+        .remove-card { position: absolute; top: 10px; right: 10px; background: #ed4245; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-size: 0.7rem; }
+
+        /* Preview Area */
+        #preview-area {
+            flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 20px;
+        }
+        .preview-controls { margin-bottom: 15px; display: flex; gap: 10px; }
+        .preview-controls button { width: auto; padding: 5px 15px; background: var(--panel-bg); }
+        
+        #preview-container {
+            width: 100%; height: 100%; max-width: 1200px;
+            background: white; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: max-width 0.3s;
+        }
+        iframe { width: 100%; height: 100%; border: none; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR: Contrôles -->
+    <div id="sidebar">
+        <h1>Générateur de Serveur</h1>
+        
+        <h2>1. Plateformes</h2>
+        <div class="checkbox-group">
+            <input type="checkbox" id="enable-discord" checked onchange="updateConfig()">
+            <label for="enable-discord">Activer Discord</label>
+        </div>
+        <div class="form-group" id="discord-settings">
+            <label>Code d'invitation (ex: dQw4w9WgXcQ)</label>
+            <input type="text" id="discord-invite" value="discord-developers" onchange="fetchDiscordData()">
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="enable-minecraft" checked onchange="updateConfig()">
+            <label for="enable-minecraft">Activer Minecraft</label>
+        </div>
+        <div class="form-group" id="minecraft-settings">
+            <label>IP du Serveur (ex: mc.hypixel.net)</label>
+            <input type="text" id="minecraft-ip" value="mc.hypixel.net" onchange="fetchMinecraftData()">
+        </div>
+
+        <h2>2. Apparence</h2>
+        <div class="form-group">
+            <label>Couleur de Fond</label>
+            <input type="color" id="color-bg" value="#23272A" onchange="updateConfig()">
+        </div>
+        <div class="form-group">
+            <label>Couleur du Texte</label>
+            <input type="color" id="color-text" value="#FFFFFF" onchange="updateConfig()">
+        </div>
+        <div class="form-group">
+            <label>Accentuation Discord</label>
+            <input type="color" id="color-discord" value="#5865F2" onchange="updateConfig()">
+        </div>
+        <div class="form-group">
+            <label>Accentuation Minecraft</label>
+            <input type="color" id="color-mc" value="#2EA043" onchange="updateConfig()">
+        </div>
+
+        <h2>3. Cartes "Pourquoi nous rejoindre ?"</h2>
+        <div class="form-group">
+            <input type="text" id="card-title" placeholder="Titre de l'avantage" style="margin-bottom: 5px;">
+            <input type="text" id="card-desc" placeholder="Description courte">
+            <button onclick="addCard()">Ajouter la carte</button>
+        </div>
+        <div id="cards-list"></div>
+
+        <h2>4. Exportation</h2>
+        <button onclick="exportHTML()" style="background-color: #43b581; font-size: 1.1rem; padding: 15px;">Générer et Télécharger</button>
+    </div>
+
+    <!-- PREVIEW AREA: Aperçu en direct -->
+    <div id="preview-area">
+        <div class="preview-controls">
+            <button onclick="setPreviewSize('100%')">Bureau</button>
+            <button onclick="setPreviewSize('768px')">Tablette</button>
+            <button onclick="setPreviewSize('375px')">Mobile</button>
+        </div>
+        <div id="preview-container">
+            <iframe id="preview-frame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // État de l'application
+        let config = {
+            discord: { enabled: true, invite: 'discord-developers', data: null },
+            minecraft: { enabled: true, ip: 'mc.hypixel.net', data: null },
+            colors: { bg: '#23272A', text: '#FFFFFF', discord: '#5865F2', mc: '#2EA043' },
+            cards: [
+                { title: 'Communauté Active', desc: 'Des joueurs connectés tous les jours pour partager de bons moments.' },
+                { title: 'Événements', desc: 'Des tournois et des soirées organisés chaque semaine.' }
+            ]
+        };
+
+        // Gestion de la taille de l'aperçu
+        function setPreviewSize(width) {
+            document.getElementById('preview-container').style.maxWidth = width;
+        }
+
+        // Appels API
+        async function fetchDiscordData() {
+            config.discord.invite = document.getElementById('discord-invite').value.split('/').pop();
+            if(!config.discord.invite) return;
+            try {
+                const res = await fetch(`https://discord.com/api/v9/invites/${config.discord.invite}?with_counts=true`);
+                if(res.ok) {
+                    config.discord.data = await res.json();
+                } else {
+                    config.discord.data = { guild: { name: "Serveur Discord Introuvable" }, approximate_member_count: 0 };
+                }
+            } catch(e) { console.error("Erreur API Discord", e); }
+            renderPreview();
+        }
+
+        async function fetchMinecraftData() {
+            config.minecraft.ip = document.getElementById('minecraft-ip').value;
+            if(!config.minecraft.ip) return;
+            try {
+                const res = await fetch(`https://api.mcsrvstat.us/3/${config.minecraft.ip}`);
+                if(res.ok) {
+                    config.minecraft.data = await res.json();
+                }
+            } catch(e) { console.error("Erreur API Minecraft", e); }
+            renderPreview();
+        }
+
+        // Gestion des cartes
+        function addCard() {
+            const title = document.getElementById('card-title').value;
+            const desc = document.getElementById('card-desc').value;
+            if(title && desc) {
+                config.cards.push({ title, desc });
+                document.getElementById('card-title').value = '';
+                document.getElementById('card-desc').value = '';
+                updateCardsList();
+                renderPreview();
+            }
+        }
+
+        function removeCard(index) {
+            config.cards.splice(index, 1);
+            updateCardsList();
+            renderPreview();
+        }
+
+        function updateCardsList() {
+            const container = document.getElementById('cards-list');
+            container.innerHTML = config.cards.map((c, i) => `
+                <div class="card-item">
+                    <h4>${c.title}</h4>
+                    <p>${c.desc}</p>
+                    <div class="remove-card" onclick="removeCard(${i})">X</div>
+                </div>
+            `).join('');
+        }
+
+        // Mise à jour de la configuration globale depuis l'UI
+        function updateConfig() {
+            config.discord.enabled = document.getElementById('enable-discord').checked;
+            config.minecraft.enabled = document.getElementById('enable-minecraft').checked;
+            config.colors.bg = document.getElementById('color-bg').value;
+            config.colors.text = document.getElementById('color-text').value;
+            config.colors.discord = document.getElementById('color-discord').value;
+            config.colors.mc = document.getElementById('color-mc').value;
+            
+            document.getElementById('discord-settings').style.display = config.discord.enabled ? 'block' : 'none';
+            document.getElementById('minecraft-settings').style.display = config.minecraft.enabled ? 'block' : 'none';
+            
+            renderPreview();
+        }
+
+        // Génération du code HTML final (Template)
+        function generateTemplateHTML() {
+            let discordHtml = '';
+            let mcHtml = '';
+            let tabsHtml = '';
+            let scriptsHtml = '';
+
+            // Section Discord
+            if (config.discord.enabled) {
+                const dData = config.discord.data;
+                const name = dData?.guild?.name || "Notre Serveur Discord";
+                const members = dData?.approximate_member_count || "?";
+                const icon = dData?.guild?.icon ? `https://cdn.discordapp.com/icons/${dData.guild.id}/${dData.guild.icon}.png` : 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/discord-white-icon.png';
+                
+                tabsHtml += `<button class="tab-btn active" onclick="showTab('discord-tab')">Discord</button>`;
+                discordHtml = `
+                <div id="discord-tab" class="tab-content active">
+                    <img src="${icon}" alt="Logo" class="server-logo">
+                    <h2>${name}</h2>
+                    <p>Rejoignez <strong>${members}</strong> membres en ligne !</p>
+                    <a href="https://discord.gg/${config.discord.invite}" class="btn" style="background-color: ${config.colors.discord}">Rejoindre le Discord</a>
+                </div>`;
+            }
+
+            // Section Minecraft
+            if (config.minecraft.enabled) {
+                const mData = config.minecraft.data;
+                const isOnline = mData?.online;
+                const players = isOnline ? `${mData.players.online}/${mData.players.max}` : "Hors-ligne";
+                const motd = isOnline && mData.motd ? mData.motd.clean.join('<br>') : "Serveur actuellement indisponible.";
+                
+                tabsHtml += `<button class="tab-btn ${!config.discord.enabled ? 'active' : ''}" onclick="showTab('mc-tab')">Minecraft</button>`;
+                mcHtml = `
+                <div id="mc-tab" class="tab-content ${!config.discord.enabled ? 'active' : ''}">
+                    <h2>${config.minecraft.ip}</h2>
+                    <div class="status ${isOnline ? 'online' : 'offline'}">${isOnline ? 'En Ligne' : 'Hors Ligne'} - Joueurs: ${players}</div>
+                    <div class="motd">${motd}</div>
+                    <button class="btn copy-btn" style="background-color: ${config.colors.mc}" onclick="copyIP('${config.minecraft.ip}')">Copier l'IP</button>
+                </div>`;
+            }
+
+            // Section Cartes
+            const cardsHtml = config.cards.map(c => `
+                <div class="card">
+                    <h3>${c.title}</h3>
+                    <p>${c.desc}</p>
+                </div>
+            `).join('');
+
+            // Structure HTML Finale
+            return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rejoignez-nous !</title>
+    <style>
+        body {
+            margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: ${config.colors.bg}; color: ${config.colors.text};
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+        .container { max-width: 800px; width: 90%; margin: 40px auto; text-align: center; }
+        .tabs { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; }
+        .tab-btn {
+            background: rgba(255,255,255,0.1); border: none; color: inherit;
+            padding: 10px 20px; cursor: pointer; border-radius: 5px; font-size: 1rem;
+        }
+        .tab-btn.active { background: rgba(255,255,255,0.3); font-weight: bold; }
+        .tab-content { display: none; padding: 30px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 30px;}
+        .tab-content.active { display: block; }
+        .server-logo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+        .btn {
+            display: inline-block; padding: 12px 25px; color: white; text-decoration: none;
+            border-radius: 5px; font-weight: bold; margin-top: 15px; border: none; cursor: pointer;
+        }
+        .status { margin: 15px 0; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .status.online { background: rgba(46, 160, 67, 0.2); color: #43b581; }
+        .status.offline { background: rgba(237, 66, 69, 0.2); color: #ed4245; }
+        .motd { background: #000; color: #aaa; font-family: monospace; padding: 15px; border-radius: 5px; margin-bottom: 15px;}
+        
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 40px; }
+        .card { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; text-align: left; }
+        .card h3 { margin-top: 0; color: ${config.colors.discord}; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rejoignez notre Communauté</h1>
+        
+        <div class="tabs">
+            ${(config.discord.enabled && config.minecraft.enabled) ? tabsHtml : ''}
+        </div>
+
+        ${discordHtml}
+        ${mcHtml}
+
+        <div class="cards-grid">
+            ${cardsHtml}
+        </div>
+    </div>
+
+    <script>
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+        function copyIP(ip) {
+            navigator.clipboard.writeText(ip);
+            alert('IP copiée : ' + ip);
+        }
+    <\/script>
+</body>
+</html>`;
+        }
+
+        // Mettre à jour l'iframe d'aperçu
+        function renderPreview() {
+            const html = generateTemplateHTML();
+            const iframe = document.getElementById('preview-frame');
+            iframe.srcdoc = html;
+        }
+
+        // Exporter le code
+        function exportHTML() {
+            const htmlContent = generateTemplateHTML();
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'presentation_serveur.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialisation
+        async function init() {
+            await fetchDiscordData();
+            await fetchMinecraftData();
+            updateCardsList();
+            updateConfig();
+        }
+
+        init();
+    </script>
+</body>
+</html>
