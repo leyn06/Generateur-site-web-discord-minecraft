@@ -240,7 +240,73 @@ iframe { width: 100%; height: 100%; border: none; }
 .user-badge img { width: 28px; height: 28px; border-radius: 50%; }
 .user-badge a { margin-left: auto; color: var(--text-secondary); font-size: 0.75rem; }
 
-@media (max-width: 900px) {
+/* ---------- Suggestions par but du serveur ---------- */
+select#server-purpose {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}
+
+#suggestions-panel {
+  margin-top: 14px;
+  animation: rise 0.25s ease;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-block { margin-bottom: 14px; }
+.suggestion-block:last-child { margin-bottom: 0; }
+.suggestion-label {
+  font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text-secondary); margin-bottom: 8px; display: block;
+}
+
+.suggestion-tagline {
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.suggestion-tagline span { color: var(--text-secondary); }
+
+.suggestion-swatches { display: flex; gap: 8px; align-items: center; }
+.swatch { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--panel-border); }
+
+.suggestion-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.suggestion-card:last-child { margin-bottom: 0; }
+.suggestion-card .txt h5 { margin: 0 0 3px; font-size: 0.85rem; }
+.suggestion-card .txt p { margin: 0; font-size: 0.76rem; color: var(--text-secondary); }
+.suggestion-card.added { opacity: 0.45; }
+
+.mini-btn {
+  width: auto; flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  background: rgba(255,255,255,0.08);
+}
+.mini-btn.applied { background: var(--success); }
+
   body { flex-direction: column; height: auto; overflow: auto; }
   #sidebar { width: 100%; min-width: 0; height: auto; max-height: 60vh; }
   #preview-area { padding: 16px; }
