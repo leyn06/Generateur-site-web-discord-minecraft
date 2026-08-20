@@ -1,10 +1,11 @@
 // ui.js — relie le DOM aux modules métier
-import { config, saveConfig, onConfigChange } from './state.js';
+import { config, saveConfig, onConfigChange, newCardId } from './state.js';
 import { fetchDiscordData } from './api-discord.js';
 import { fetchMinecraftData } from './api-minecraft.js';
 import { addOrUpdateCard, removeCard, startEditCard, cancelEditCard, getEditingId, renderCardsList } from './cards.js';
 import { renderPreview, setPreviewSize } from './preview.js';
 import { exportHTML } from './export.js';
+import { populatePurposeSelect, renderSuggestions } from './suggestions-ui.js';
 import { debounce } from './utils.js';
 
 const $ = (id) => document.getElementById(id);
@@ -119,6 +120,45 @@ function bindExport() {
   $('export-btn').addEventListener('click', exportHTML);
 }
 
+function refreshSuggestions() {
+  renderSuggestions($('suggestions-panel'), config.purpose, config, {
+    onApplyTagline: (tagline) => {
+      config.server.tagline = tagline;
+      $('server-tagline').value = tagline;
+      saveConfig();
+      renderPreview();
+    },
+    onApplyColors: (colors) => {
+      config.colors.discord = colors.discord;
+      config.colors.mc = colors.mc;
+      $('color-discord').value = colors.discord;
+      $('color-mc').value = colors.mc;
+      saveConfig();
+      renderPreview();
+    },
+    onAddCard: (card) => {
+      const exists = config.cards.some(c => c.title.trim().toLowerCase() === card.title.trim().toLowerCase());
+      if (exists) return;
+      config.cards.push({ id: newCardId(), title: card.title, desc: card.desc });
+      saveConfig();
+      refreshCards();
+      renderPreview();
+    }
+  });
+}
+
+function bindPurposeSelect() {
+  const select = $('server-purpose');
+  populatePurposeSelect(select, config.purpose);
+  refreshSuggestions();
+
+  select.addEventListener('change', () => {
+    config.purpose = select.value;
+    saveConfig();
+    refreshSuggestions();
+  });
+}
+
 export async function initUI() {
   fillFormFromConfig();
   refreshCards();
@@ -128,6 +168,7 @@ export async function initUI() {
   bindCardForm();
   bindPreviewControls();
   bindExport();
+  bindPurposeSelect();
   setPreviewSize('desktop');
 
   await Promise.all([
