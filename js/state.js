@@ -4,6 +4,7 @@ import { showToast, debounce } from './utils.js';
 const STORAGE_KEY = 'site-generator:config:v1';
 
 const defaultConfig = {
+  purpose: '',
   discord: { enabled: true, invite: 'discord-developers', data: null, status: 'idle' },
   minecraft: { enabled: true, ip: 'mc.hypixel.net', data: null, status: 'idle' },
   colors: { bg: '#080A0F', text: '#FFFFFF', discord: '#5865F2', mc: '#2EA043' },
@@ -25,6 +26,7 @@ function loadConfig() {
     const parsed = JSON.parse(raw);
     // fusion défensive avec les valeurs par défaut (nouvelles clés, ancien format...)
     return {
+      purpose: typeof parsed.purpose === 'string' ? parsed.purpose : defaultConfig.purpose,
       discord: { ...defaultConfig.discord, ...parsed.discord },
       minecraft: { ...defaultConfig.minecraft, ...parsed.minecraft },
       colors: { ...defaultConfig.colors, ...parsed.colors },
@@ -42,8 +44,9 @@ export const config = loadConfig();
 const persist = debounce(() => {
   try {
     // on ne sauvegarde pas les données d'API brutes (regénérables, potentiellement volumineuses)
-    const { discord, minecraft, colors, server, cards } = config;
+    const { discord, minecraft, colors, server, cards, purpose } = config;
     const toSave = {
+      purpose,
       discord: { enabled: discord.enabled, invite: discord.invite },
       minecraft: { enabled: minecraft.enabled, ip: minecraft.ip },
       colors,
