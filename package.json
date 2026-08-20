@@ -1,8 +1,11 @@
 {
-  "dependencies": {
-    "express": "^5.2.1",
-    "express-session": "^1.19.0",
-    "passport": "^0.7.0",
-    "passport-github2": "^0.1.12"
-  }
+  "name": "generateur-site-web-discord-minecraft",
+  "version": "2.0.0",
+  "description": "Générateur de site vitrine pour serveurs Discord et Minecraft, avec aperçu temps réel et export HTML.",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev:frontend": "npx --yes serve ."
+  },
+  "license": "MIT"
 }
+
