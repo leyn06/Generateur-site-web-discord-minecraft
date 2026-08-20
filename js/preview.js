@@ -18,3 +18,4 @@ export function setPreviewSize(mode) {
   });
 }
 
+
